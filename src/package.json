@@ -1,0 +1,25 @@
+{
+  "name": "api-express",
+  "version": "1.0.0",
+  "description": "express based implementation of MV's mongo CRUD operations",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MarketVote/api-express.git"
+  },
+  "author": "Nathan Baum (nathan.baum@nyu.edu)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/MarketVote/api-express/issues"
+  },
+  "homepage": "https://github.com/MarketVote/api-express#readme",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2",
+    "express-session": "^1.15.6",
+    "mongoose": "^5.0.4"
+  }
+}
