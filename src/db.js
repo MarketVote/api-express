@@ -1,7 +1,7 @@
 // db.js
 const mongoose = require('mongoose');
 const ObjectID = mongoose.Schema.Types.ObjectId;
-mongoose.plugin(schema => { schema.options.usePushEach = true });
+mongoose.plugin(schema => { schema.options.usePushEach = true; });
 
 //my schema goes here!
 const User = new mongoose.Schema({
@@ -18,8 +18,15 @@ const Article = new mongoose.Schema({
     imageURL: String,
     content: String,
   }],
+  proBlurbs: [{
+    imageURL: String,
+    content: String,
+  }],
   likes: Number,
   dislikes: Number
+},
+{
+  timestamps: true
 });
 
 const IndustryTag = new mongoose.Schema({
@@ -33,9 +40,9 @@ const IssueTag = new mongoose.Schema({
 });
 
 mongoose.model('User', User);
-mongoose.model('Article', Board);
-mongoose.model('IndustryTag', Post);
-mongoose.model('IssueTag', Post);
+mongoose.model('Article', Article);
+mongoose.model('IndustryTag', IndustryTag);
+mongoose.model('IssueTag', IssueTag);
 
 let dbconf = null;
 // is the environment variable, NODE_ENV, set to PRODUCTION?
