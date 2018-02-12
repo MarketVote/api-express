@@ -222,7 +222,7 @@ app.post('/api/articles', cpUpload, function (req, res) {
     for (const blurb in req.body.conBlurbs) {
       conBlurbs.push({
         imageURL: path.join('/uploads', req.files.conImgs[blurb].name),
-        content: req.body.conBlurbs[blurb].content
+        content: req.body.conBlurbs[blurb]
       });
     }
 
@@ -230,7 +230,7 @@ app.post('/api/articles', cpUpload, function (req, res) {
     for (const blurb in req.body.proBlurbs) {
       proBlurbs.push({
         imageURL: path.join('/uploads', req.files.proImgs[blurb].name),
-        content: req.body.proBlurbs[blurb].content
+        content: req.body.proBlurbs[blurb]
       });
     }
 
