@@ -9,8 +9,9 @@
   </head>
   <body>
     <h1>Paste the contents of your article in this form:</h1>
-    <form class="new-article" action="/api/articles" method="post">
-        <input type="text" name="title" placeholder="Title"><br>
+    <form class="new-article" enctype='multipart/form-data' action="/api/articles" method="post">
+        <input type="text" name="password" placeholder="Author Password"><br>
+        <input type="text" name="title" placeholder="Article Title"><br>
         <textarea name="content" rows="15" cols="50" placeholder="Paste your article content here."></textarea><br>
         Upload your Cover Photo <input type="file" name="coverImg"><br>
         <div id="proBlurbFrame" class="blurbFrame">
@@ -19,14 +20,15 @@
         <div id="conBlurbFrame" class="blurbFrame">
           <div class="button" onclick="addConBlurb()">Add Another Con Blurb</div>
         </div>
+        <input type="submit" value="SUBMIT">
     </form>
   </body>
   <div id="conBlurbGeneric" class="conBlurb" style="display:none;">
-    <input type="text" name="conBlurbs[]" placeholder="con Blurb Content"><br>
-    <input type="file" name="conImgs[]" value="Upload your Con Blurb image">
+    <input type="text" name="conBlurbs[]" placeholder="con Blurb Content">
+    <input type="file" name="conImgs" value="Upload your Con Blurb image">
   </div>
   <div id="proBlurbGeneric" class="proBlurb" style="display:none;">
     <input type="text" name="proBlurbs[]" placeholder="Pro Blurb Content">
-    <input type="file" name="proImgs[]" value="Upload your Pro Blurb image">
+    <input type="file" name="proImgs" value="Upload your Pro Blurb image">
   </div>
 </html>

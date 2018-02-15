@@ -7,17 +7,47 @@ const path = require('path');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const multer = require('multer');
-const upload = multer({ dest: path.resolve(__dirname, 'public/uploads/') });
-
+const mime = require('mime-types');
 
 const fs = require('fs');
 const fn = path.join(__dirname, 'config.json');
 const data = fs.readFileSync(fn);
 
+//here, we're generating the counter that will be used in the non-colliding file names
+const files = fs.readdirSync(path.resolve(__dirname, 'public/uploads/'));
+//we take the maximum of all the filenames without their extensions
+let max = Math.max( ... files.map((e) => { return Number.parseInt(e.split('.')[0], 16); }));
+if (max === -Infinity) {
+  max = 0;
+}
+// we devide by 100000 because that is the offset that we're giving to our numbers
+//and then we add one to make up for the fact that the server was previously off
+let counter = Math.floor(max/1000000)+1;
+
 // our configuration file will be in json, so parse it and get our salt
 const conf = JSON.parse(data);
 const sessionSecret = conf.secret;
 const authorPassword = conf.password;
+
+//multer is going to help us deal with uploading files for articles, but we need to provide a custom naming scheme to avoid claubering file extensions
+function generateNonCollidingFileName(ext) {
+  const ceiling = counter * 1000000;
+  const offset = Math.floor(Math.random() * ceiling);
+  const numString = (ceiling + offset).toString(16);
+  counter++;
+  return (numString+'.'+ext);
+}
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.resolve(__dirname, 'public/uploads/'));
+  },
+  filename: function (req, file, cb) {
+    //we just want to send the first option, because mime.extensions[file.mimetype] will return something like jpeg/jpg/jpe
+    cb(null, generateNonCollidingFileName((mime.extensions[file.mimetype]+'').split(',')[0]));
+  }
+});
+const upload = multer({storage: storage});
+
 
 //console.log('secret:', sessionSecret);
 
@@ -31,22 +61,33 @@ const Article = mongoose.model('Article');
 const IssueTag = mongoose.model('IssueTag'); //eslint-disable-line
 const IndustryTag = mongoose.model('IndustryTag'); //eslint-disable-line
 
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json({
+  strict: false
+}));
 const publicPath = path.resolve(__dirname, 'public');
 app.use(express.static(publicPath));
 const sessionOptions = {
   secret: sessionSecret,
-  saveUninitialized: false,
-  resave: false,
+  saveUninitialized: true,
+  resave: true,
 };
 app.use(session(sessionOptions));
 
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "http://localhost:3000");
+  res.header('Access-Control-Allow-Credentials', 'true');
+  //res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 
 function getUser (sessionID) {
+  //console.log('getUser called with sessionID:', sessionID);
   return new Promise( (resolve, reject) => {
     let user;
     User.findOne({sessionID: sessionID}).exec()
       .then(function (qUser) {
+        //console.log('querried db and found:', qUser);
         if (qUser === null) {
           user = new User({
             sessionID: sessionID,
@@ -66,7 +107,8 @@ function getUser (sessionID) {
 }
 
 app.get('/', function(req, res) {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  req.session.saveme = true;
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.get('/api/articles', function(req, res) {
@@ -86,7 +128,6 @@ app.get('/api/articles', function(req, res) {
 
     .then(function (qUser) {
       user = qUser;
-
       return Article
         .where('createdAt').gte(starting).lte(until)
         .sort('-createdAt')
@@ -99,21 +140,28 @@ app.get('/api/articles', function(req, res) {
         throw 'no articles found';
       }
 
-      articles = qArticles;
+      //we need to make a deep copy of articles in order to modify/decorate it
+      articles = JSON.parse(JSON.stringify(qArticles));
 
-      articles.map(function (article) {
-        let state;
-        if (user.liked.includes(article._id)) {
-          state = 'liked';
+      articles = articles.map(function (article) {
+        let status;
+        console.log('the user is: ', user);
+        console.log('the article id is: ', article._id, ' and \'\'+article._id === \'\'+user.liked[0] is ', ''+article._id === ''+user.liked[0]);
+        if (user.liked.reduce(function (acc, cur) {
+          return acc || ''+article._id === ''+cur;
+        }, false)) {
+          status = 'liked';
         }
-        else if (user.disliked.includes(article._id)) {
-          state = 'disliked';
+        else if (user.disliked.reduce(function (acc, cur) {
+          return acc || ''+article._id === ''+cur;
+        }, false)) {
+          status = 'disliked';
         }
         else {
-          state = 'neutral';
+          status = 'neutral';
         }
+        article.status = status;
 
-        article.state = state;
         return article;
       });
       return user.save();
@@ -125,7 +173,7 @@ app.get('/api/articles', function(req, res) {
 
     .catch(function (err) {
       console.log(err);
-      res.send(500);
+      res.sendStatus(500);
     });
 });
 
@@ -133,9 +181,12 @@ app.post('/api/like', function(req, res) {
 
   let user, article;
 
+  //console.log('request body:', req.body);
+
   getUser(req.session.id)
 
     .then(function (qUser) {
+      user = qUser;
       return Article
         .findById(req.body.article._id)
         .exec();
@@ -165,17 +216,20 @@ app.post('/api/like', function(req, res) {
 
     .catch(function (err) {
       console.log(err);
-      res.send(500);
+      res.sendStatus(500);
     });
 });
 
 app.post('/api/dislike', function(req, res) {
+
+  //console.log('request body:', req.body);
 
   let user, article;
 
   getUser(req.session.id)
 
     .then(function (qUser) {
+      user = qUser;
       return Article
         .findById(req.body.article._id)
         .exec();
@@ -205,23 +259,26 @@ app.post('/api/dislike', function(req, res) {
 
     .catch(function (err) {
       console.log(err);
-      res.send(500);
+      res.sendStatus(500);
     });
 });
 
 const cpUpload = upload.fields([{name: 'coverImg', maxCount: 1}, {name: 'proImgs'}, {name: 'conImgs'}]);
 app.post('/api/articles', cpUpload, function (req, res) {
   if (req.body.password !== authorPassword) {
-    res.send(403);
+    res.sendStatus(403);
   }
   else {
 
     //TODO: implement tagging here (each article has industry tags and issue tags -- those tags have to be searched for, and created if they are not found, then this article's _id needs to be added to them to maintain associativity)
 
+    console.log('===LOGGING FILES===\n',req.files);
+    console.log('===LOGGING BODY===\n', req.body);
+
     const conBlurbs = [];
     for (const blurb in req.body.conBlurbs) {
       conBlurbs.push({
-        imageURL: path.join('/uploads', req.files.conImgs[blurb].name),
+        imageURL: path.join('/uploads', req.files.conImgs[blurb].filename),
         content: req.body.conBlurbs[blurb]
       });
     }
@@ -229,7 +286,7 @@ app.post('/api/articles', cpUpload, function (req, res) {
     const proBlurbs = [];
     for (const blurb in req.body.proBlurbs) {
       proBlurbs.push({
-        imageURL: path.join('/uploads', req.files.proImgs[blurb].name),
+        imageURL: path.join('/uploads', req.files.proImgs[blurb].filename),
         content: req.body.proBlurbs[blurb]
       });
     }
@@ -237,7 +294,7 @@ app.post('/api/articles', cpUpload, function (req, res) {
     const article = new Article({
       title: req.body.title,
       content: req.body.content,
-      imageURL: path.join('/uploads', req.files.coverImg.name),
+      imageURL: path.join('/uploads', req.files.coverImg[0].filename),
       conBlurbs: conBlurbs,
       proBlurbs: proBlurbs,
       likes: 0,
@@ -246,10 +303,10 @@ app.post('/api/articles', cpUpload, function (req, res) {
 
     article.save()
       .then(function (result) {
-        res.send(200);
+        res.sendStatus(200);
       })
       .catch(function (err) {
-        res.send(500);
+        res.sendStatus(500);
       });
   }
 });

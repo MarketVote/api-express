@@ -63,4 +63,4 @@ if (process.env.NODE_ENV === 'PRODUCTION') {
  dbconf = 'mongodb://localhost/marketvote';
 }
 
-mongoose.connect(dbconf, {useMongoClient: true});
+mongoose.connect(dbconf);
