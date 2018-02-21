@@ -106,11 +106,6 @@ function getUser (sessionID) {
     });
 }
 
-app.get('/', function(req, res) {
-  req.session.saveme = true;
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
 app.get('/api/articles', function(req, res) {
   let starting = new Date('Sat Feb 10 2018 23:57:38 GMT-0500 (EST)');
   let until = new Date();
@@ -263,6 +258,17 @@ app.post('/api/dislike', function(req, res) {
     });
 });
 
+function getTag (name) { //returns a tag object, or creates a new one if not found in db
+
+}
+
+// tags: an array of tag names
+// article: the ObjectID for an article
+// calls getTag on all tag names, then adds the ObjectID to all, then saves all and returns the promise that Promise.all() returns
+function setTags (tags, article) {
+
+}
+
 const cpUpload = upload.fields([{name: 'coverImg', maxCount: 1}, {name: 'proImgs'}, {name: 'conImgs'}]);
 app.post('/api/articles', cpUpload, function (req, res) {
   if (req.body.password !== authorPassword) {
@@ -311,6 +317,10 @@ app.post('/api/articles', cpUpload, function (req, res) {
   }
 });
 
+app.get('/', function(req, res) {
+  req.session.saveme = true;
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 let portHTTP = 8000, portHTTPS = 8000;
 
