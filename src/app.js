@@ -14,7 +14,8 @@ const fn = path.join(__dirname, 'config.json');
 const data = fs.readFileSync(fn);
 
 //here, we're generating the counter that will be used in the non-colliding file names
-const files = fs.readdirSync(path.resolve(__dirname, 'public/uploads/'));
+let files = fs.readdirSync(path.resolve(__dirname, 'public/uploads/'));
+files = files.filter(e => e!=='.gitignore');//take out the gitignore
 //we take the maximum of all the filenames without their extensions
 let max = Math.max( ... files.map((e) => { return Number.parseInt(e.split('.')[0], 16); }));
 if (max === -Infinity) {
@@ -43,7 +44,7 @@ const storage = multer.diskStorage({
   },
   filename: function (req, file, cb) {
     //we just want to send the first option, because mime.extensions[file.mimetype] will return something like jpeg/jpg/jpe
-    cb(null, generateNonCollidingFileName((mime.extensions[file.mimetype]+'').split(',')[0]));
+    cb( null, generateNonCollidingFileName( (mime.extensions[file.mimetype]+'').split(',')[0] ) );
   }
 });
 const upload = multer({storage: storage});
@@ -69,7 +70,7 @@ app.use(express.static(publicPath));
 const sessionOptions = {
   secret: sessionSecret,
   saveUninitialized: true,
-  resave: true,
+  resave: true
 };
 app.use(session(sessionOptions));
 
