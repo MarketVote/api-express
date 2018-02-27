@@ -15,9 +15,10 @@ const data = fs.readFileSync(fn);
 
 //here, we're generating the counter that will be used in the non-colliding file names
 let files = fs.readdirSync(path.resolve(__dirname, 'public/uploads/'));
-files = files.filter(e => e!=='.gitignore');//take out the gitignore
 //we take the maximum of all the filenames without their extensions
-let max = Math.max( ... files.map((e) => { return Number.parseInt(e.split('.')[0], 16); }));
+files = files.map((e) => { return Number.parseInt(e.split('.')[0], 16); });
+files = files.filter(e => (e < 0 || e === 0 || e > 0));
+let max = Math.max( ... files );
 if (max === -Infinity) {
   max = 0;
 }
