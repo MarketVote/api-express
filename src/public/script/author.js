@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function(evt) {
 
 });
 
-function addConBlurb() {
+function addConBlurb() { //eslint-disable-line
   const conBlurb = document.querySelector('#conBlurbGeneric').cloneNode(true);
   const conBlurbPane = document.querySelector('#conBlurbFrame');
 
@@ -12,7 +12,7 @@ function addConBlurb() {
   conBlurbPane.appendChild(conBlurb);
 }
 
-function addProBlurb() {
+function addProBlurb() { //eslint-disable-line
   const proBlurb = document.querySelector('#proBlurbGeneric').cloneNode(true);
   const proBlurbPane = document.querySelector('#proBlurbFrame');
 
@@ -20,4 +20,14 @@ function addProBlurb() {
   proBlurb.id = '';
 
   proBlurbPane.appendChild(proBlurb);
+}
+
+function addTag() { //eslint-disable-line
+  const tag = document.querySelector('#tagGeneric').cloneNode(true);
+  const tagPane = document.querySelector('#tagFrame');
+
+  tag.style = '';
+  tag.id = '';
+
+  tagPane.appendChild(tag);
 }

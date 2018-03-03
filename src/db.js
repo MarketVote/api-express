@@ -16,11 +16,11 @@ const Article = new mongoose.Schema({
   imageURL: String,
   conBlurbs: [{
     imageURL: String,
-    content: String,
+    content: String
   }],
   proBlurbs: [{
     imageURL: String,
-    content: String,
+    content: String
   }],
   likes: Number,
   dislikes: Number
@@ -29,20 +29,14 @@ const Article = new mongoose.Schema({
   timestamps: true
 });
 
-const IndustryTag = new mongoose.Schema({
-  key: String,
-  value: [{type: ObjectID, ref: 'Article'}]
-});
-
-const IssueTag = new mongoose.Schema({
+const Tag = new mongoose.Schema({
   key: String,
   value: [{type: ObjectID, ref: 'Article'}]
 });
 
 mongoose.model('User', User);
 mongoose.model('Article', Article);
-mongoose.model('IndustryTag', IndustryTag);
-mongoose.model('IssueTag', IssueTag);
+mongoose.model('Tag', Tag);
 
 let dbconf = null;
 // is the environment variable, NODE_ENV, set to PRODUCTION?

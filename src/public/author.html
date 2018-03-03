@@ -14,6 +14,9 @@
         <input type="text" name="title" placeholder="Article Title"><br>
         <textarea name="content" rows="15" cols="50" placeholder="Paste your article content here."></textarea><br>
         Upload your Cover Photo <input type="file" name="coverImg"><br>
+        <div id="tagFrame">
+          <div class="button" onclick="addTag()">Add Another Tag</div>
+        </div>
         <div id="proBlurbFrame" class="blurbFrame">
           <div class="button" onclick="addProBlurb()">Add Another Pro Blurb</div>
         </div><br>
@@ -30,5 +33,8 @@
   <div id="proBlurbGeneric" class="proBlurb" style="display:none;">
     <input type="text" name="proBlurbs[]" placeholder="Pro Blurb Content">
     <input type="file" name="proImgs" value="Upload your Pro Blurb image">
+  </div>
+  <div id="tagGeneric" class="tag" style="display:none;">
+    <input type="text" name="tags[]" placeholder="tag name">
   </div>
 </html>

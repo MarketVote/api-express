@@ -18,13 +18,16 @@ let files = fs.readdirSync(path.resolve(__dirname, 'public/uploads/'));
 //we take the maximum of all the filenames without their extensions
 files = files.map((e) => { return Number.parseInt(e.split('.')[0], 16); });
 files = files.filter(e => (e < 0 || e === 0 || e > 0));
+//console.log('files:', files);
 let max = Math.max( ... files );
 if (max === -Infinity) {
   max = 0;
 }
+//console.log('max:', max);
 // we devide by 100000 because that is the offset that we're giving to our numbers
 //and then we add one to make up for the fact that the server was previously off
 let counter = Math.floor(max/1000000)+1;
+//console.log('counter', counter);
 
 // our configuration file will be in json, so parse it and get our salt
 const conf = JSON.parse(data);
@@ -60,8 +63,7 @@ const User = mongoose.model('User');
 const Article = mongoose.model('Article');
 
 //TODO: implement tagging system
-const IssueTag = mongoose.model('IssueTag'); //eslint-disable-line
-const IndustryTag = mongoose.model('IndustryTag'); //eslint-disable-line
+const Tag = mongoose.model('Tag'); //eslint-disable-line
 
 app.use(bodyParser.json({
   strict: false
@@ -260,15 +262,33 @@ app.post('/api/dislike', function(req, res) {
     });
 });
 
-function getTag (name) { //returns a tag object, or creates a new one if not found in db
-
+function setTag ( name,article ) {
+  let tag;
+  return Tag.findOne({key: name}).exec()
+    .then(function (result) {
+      if (result === null) {
+        tag = new Tag({
+          key: name,
+          value: [article]
+        });
+      }
+      else {
+        tag = result;
+        tag.value.push(article);
+      }
+      return tag.save();
+    })
+    .catch(function (err) {
+      throw err;
+    });
 }
 
 // tags: an array of tag names
 // article: the ObjectID for an article
 // calls getTag on all tag names, then adds the ObjectID to all, then saves all and returns the promise that Promise.all() returns
 function setTags (tags, article) {
-
+  //returns a promise that resolves when all the promises in tags.map resolve (btw, tags.map is going to be filled with all the promises from the tag saves)
+  return Promise.all(tags.map( t => setTag( t, article ) ));
 }
 
 const cpUpload = upload.fields([{name: 'coverImg', maxCount: 1}, {name: 'proImgs'}, {name: 'conImgs'}]);
@@ -277,8 +297,6 @@ app.post('/api/articles', cpUpload, function (req, res) {
     res.sendStatus(403);
   }
   else {
-
-    //TODO: implement tagging here (each article has industry tags and issue tags -- those tags have to be searched for, and created if they are not found, then this article's _id needs to be added to them to maintain associativity)
 
     console.log('===LOGGING FILES===\n',req.files);
     console.log('===LOGGING BODY===\n', req.body);
@@ -309,7 +327,10 @@ app.post('/api/articles', cpUpload, function (req, res) {
       dislikes: 0
     });
 
-    article.save()
+    setTags( req.body.tags, article._id )
+      .then(function (result) {
+        return article.save();
+      })
       .then(function (result) {
         res.sendStatus(200);
       })
